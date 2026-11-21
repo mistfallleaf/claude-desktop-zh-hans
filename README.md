@@ -51,39 +51,7 @@
 
 ## 工作原理
 
-```mermaid
-flowchart TD
-    subgraph SHELL["壳层 app.asar · 主进程"]
-        direction LR
-        A["官方内置 zh-Hans.json<br/>1,567 条 · 未开放"]
-        B["菜单 / 对话框 / 托盘<br/>中文"]
-        A -->|补丁① 强制加载| B
-    end
-
-    subgraph RENDER["前端 ion-dist.asar · 渲染进程"]
-        direction LR
-        C["6,225 个 JS 文件<br/>60,058 处英文文案"]
-        D["聊天界面<br/>中文"]
-        C -->|补丁② 批量替换| D
-    end
-
-    API["Anthropic 服务端 i18n<br/>账号 en-US → 只下发英文"]
-    C -.->|原本查不到译文，回落英文| API
-
-    B --> GOAL["✅ 完整中文界面"]
-    D --> GOAL
-
-    classDef src fill:#e8f5e9,stroke:#43a047,stroke-width:1.5px,color:#1b5e20;
-    classDef patched fill:#e3f2fd,stroke:#1e88e5,stroke-width:1.5px,color:#0d47a1;
-    classDef server fill:#fff3e0,stroke:#fb8c00,stroke-width:1.5px,color:#e65100;
-    classDef goal fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px,color:#4a148c;
-    class A,C src
-    class B,D patched
-    class API server
-    class GOAL goal
-    style SHELL fill:#fafbfc,stroke:#d0d7de,stroke-width:1px
-    style RENDER fill:#fafbfc,stroke:#d0d7de,stroke-width:1px
-```
+![Claude Desktop 完整汉化架构图](docs/architecture.png)
 
 **两条路径，各打各的：**
 
@@ -211,12 +179,13 @@ reg add "HKLM\SOFTWARE\Policies\Claude" /v disableAutoUpdates /t REG_SZ /d true 
 ```text
 ├── README.md                       本文
 ├── en2zh.json                      英文原文→中文映射（42,845 条，5MB）
+├── docs/
+│   ├── architecture.png            架构图（高清渲染）
+│   └── integrity.md                三层防篡改机制详解 + 排坑速查
 ├── tools/
 │   ├── replace_defaultmessage.py   前端 defaultMessage 批量替换器
 │   ├── patch_app_asar.py           asar 等长字节补丁 + integrity 重建
 │   └── deploy.ps1                  提权部署（ACL + 覆盖 + exe 哈希同步）
-└── docs/
-    └── integrity.md                三层防篡改机制详解 + 排坑速查
 ```
 
 ## 关于 en2zh.json
