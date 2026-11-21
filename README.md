@@ -58,6 +58,16 @@
 1. **前端**：把英文原文写死替换成中文 → 服务端下发什么都影响不了它
 2. **壳层**：强制 `locale = zh-Hans` 加载官方藏起来的中文词库 → 再补齐官方自己都漏翻的硬编码菜单
 
+## 实际效果
+
+设置界面 —— 侧边栏、分组标题、选项说明全部中文（不是只汉化几个按钮）：
+
+| 配置第三方推理 | 常规设置 |
+|:---:|:---:|
+| ![配置第三方推理界面](docs/screenshots/settings-general.png) | ![常规设置界面](docs/screenshots/settings-appearance.png) |
+
+> 注：截图中的会话列表为测试内容，界面文案（菜单、标签、按钮、说明文字）均已汉化。
+
 ---
 
 ## 快速开始
@@ -181,7 +191,8 @@ reg add "HKLM\SOFTWARE\Policies\Claude" /v disableAutoUpdates /t REG_SZ /d true 
 ├── en2zh.json                      英文原文→中文映射（42,845 条，5MB）
 ├── docs/
 │   ├── architecture.png            架构图（高清渲染）
-│   └── integrity.md                三层防篡改机制详解 + 排坑速查
+│   ├── integrity.md                三层防篡改机制详解 + 排坑速查
+│   └── screenshots/                实际汉化效果截图
 ├── tools/
 │   ├── replace_defaultmessage.py   前端 defaultMessage 批量替换器
 │   ├── patch_app_asar.py           asar 等长字节补丁 + integrity 重建
