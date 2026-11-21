@@ -1,14 +1,38 @@
-# claude-desktop-zh-hans
+<div align="center">
 
-**Claude Desktop 6.x 完整简体中文汉化 —— 聊天界面、菜单栏、系统对话框、托盘图标，全覆盖。不是"补了半天界面还是英文"的残缺汉化。**
+# Claude Desktop 简体中文汉化
 
-> 适用版本：**6.28899.2**（实测）、6.6395（改个 chunk 名即可）。旧版（≤5.x，本地静态 i18n）请用社区补丁 `claude-desktop-zh-cn`（v1.4.26，适配 5.x 旧版），本项目对旧版是杀鸡用牛刀。
+**完整汉化，一次到位 —— 聊天界面 / 菜单栏 / 系统对话框 / 托盘图标，全部中文。**
+
+[![Version](https://img.shields.io/badge/version-6.28899.2-blue)](https://github.com/mistfallleaf/claude-desktop-zh-hans/releases)
+[![Platform](https://img.shields.io/badge/platform-Windows-0078D6?logo=windows&logoColor=white)](https://github.com/mistfallleaf/claude-desktop-zh-hans)
+[![Localized Strings](https://img.shields.io/badge/localized-60%2C058%20strings-brightgreen)](https://github.com/mistfallleaf/claude-desktop-zh-hans)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
+**快速导航：** [为什么需要](#为什么需要这个项目) · [工作原理](#工作原理) · [快速开始](#快速开始) · [对比社区补丁](#对比社区补丁) · [已知局限](#已知局限)
+
+</div>
+
+---
+
+## ✨ 项目亮点
+
+| | |
+|:---|:---|
+| 🎯 **完整覆盖** | 60,058 处界面文案 + 全部菜单 / 对话框 / 托盘，不是"补了半天还是英文" |
+| 🧠 **直击根因** | 6.x 的服务端动态 i18n 让改词库这条路失效，本项目直接改代码本身 |
+| 🛡️ **三层防护全处理** | 等长字节补丁 → 重建 asar integrity → 同步 exe 内哈希标记 |
+| 🔒 **防更新** | HKLM 版本封顶 + 关闭自动更新，升级不会悄悄冲掉汉化 |
+| 📦 **开箱即用** | 42,845 条词库映射 + 三个脚本 + 排坑文档 |
+
+> **适用版本**：`6.28899.2`（实测）、`6.6395`（改个 chunk 名即可）。
+> 旧版（≤5.x，本地静态 i18n）请用社区补丁 [`claude-desktop-zh-cn`](https://github.com/1346956/claude-desktop-zh-cn) v1.4.26 —— 对旧版来说本项目是杀鸡用牛刀。
 
 ---
 
 ## 为什么需要这个项目
 
-> 如果你已经试过社区补丁（`claude-desktop-zh-cn` 等），却发现有的一大半还是英文——**这正是本项目要解决的问题**。它不是"覆盖率不够高"，而是社区补丁改本地词库这条路在 6.x 上根本走不通。
+> 如果你试过社区补丁（`claude-desktop-zh-cn` 等），发现覆盖率刷到 98% 界面却还是英文——**这正是本项目要解决的问题**。不是"覆盖率不够高"，而是改本地词库这条路在 6.x 上**根本走不通**。
 
 从某个版本起，Claude Desktop 的前端 i18n 改成了**服务端动态下发**：
 
@@ -16,30 +40,57 @@
 - 账号 locale = en-US → 服务器只下发英文 → 界面**永远**显示英文 defaultMessage
 - 本地词库（`en-US.json`）？前端代码根本不 import 它——**改词库这条路已经死了**
 
-社区补丁覆盖率刷到 98% 界面还是英文，就是这个原因。而壳层（菜单栏/托盘/对话框）更冤：官方 asar 里**自带完整的 `zh-Hans.json` 中文词库**（1567 条），只是 UI 不开放入口，启动时的语言白名单里也没有中文。
+而壳层（菜单栏 / 托盘 / 对话框）更冤：官方 asar 里**自带完整的 `zh-Hans.json` 中文词库**（1,567 条），只是 UI 不开放入口，启动时的语言白名单里也没有中文。
 
 **本项目的思路：不跟服务端较劲，直接改代码本身。**
 
-- 前端：把 JS 里的 `defaultMessage:"英文"` 原文批量替换成中文（6 万处）
-- 壳层：字节级补丁强制加载官方自带的 zh-Hans 词库 + 替换官方漏翻译的硬编码菜单项
+- **前端**：把 JS 里的 `defaultMessage:"英文"` 原文批量替换成中文（6 万处），从此不依赖服务端下发的译文
+- **壳层**：字节级补丁强制加载官方自带的 `zh-Hans.json` + 替换官方漏翻译的硬编码菜单项
 
-## 架构与汉化点位
+---
+
+## 工作原理
 
 ```mermaid
 flowchart TD
-    subgraph 壳层["壳层 app.asar（主进程）"]
-        A1["resources/i18n/zh-Hans.json<br/>官方自带中文词库·未开放"]
-        A2[".vite/build/*.js<br/>语言选择代码 + 硬编码菜单"]
+    subgraph SHELL["壳层 app.asar · 主进程"]
+        direction LR
+        A["官方内置 zh-Hans.json<br/>1,567 条 · 未开放"]
+        B["菜单 / 对话框 / 托盘<br/>中文"]
+        A -->|补丁① 强制加载| B
     end
-    subgraph 前端["前端 ion-dist.asar（渲染进程）"]
-        B1["assets/*.js × 6225<br/>60,058 处 defaultMessage 英文"]
+
+    subgraph RENDER["前端 ion-dist.asar · 渲染进程"]
+        direction LR
+        C["6,225 个 JS 文件<br/>60,058 处英文文案"]
+        D["聊天界面<br/>中文"]
+        C -->|补丁② 批量替换| D
     end
-    C["Anthropic 服务端 i18n catalog<br/>账号 locale=en-US → 只下发英文"]
-    A1 -->|"补丁: 强制 locale=zh-Hans"| A2
-    B1 -->|"替换: defaultMessage 英文→中文"| UI["界面"]
-    B1 --> C
-    C -->|"查不到中文→回落英文"| UI
+
+    API["Anthropic 服务端 i18n<br/>账号 en-US → 只下发英文"]
+    C -.->|原本查不到译文，回落英文| API
+
+    B --> GOAL["✅ 完整中文界面"]
+    D --> GOAL
+
+    classDef src fill:#e8f5e9,stroke:#43a047,stroke-width:1.5px,color:#1b5e20;
+    classDef patched fill:#e3f2fd,stroke:#1e88e5,stroke-width:1.5px,color:#0d47a1;
+    classDef server fill:#fff3e0,stroke:#fb8c00,stroke-width:1.5px,color:#e65100;
+    classDef goal fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px,color:#4a148c;
+    class A,C src
+    class B,D patched
+    class API server
+    class GOAL goal
+    style SHELL fill:#fafbfc,stroke:#d0d7de,stroke-width:1px
+    style RENDER fill:#fafbfc,stroke:#d0d7de,stroke-width:1px
 ```
+
+**两条路径，各打各的：**
+
+1. **前端**：把英文原文写死替换成中文 → 服务端下发什么都影响不了它
+2. **壳层**：强制 `locale = zh-Hans` 加载官方藏起来的中文词库 → 再补齐官方自己都漏翻的硬编码菜单
+
+---
 
 ## 快速开始
 
@@ -90,7 +141,7 @@ print(hashlib.sha256(d[16:16+ss]).hexdigest())
 
 **第①步 强制 locale**：在 `app-asar-extract/.vite/build/` 下找到含 `getPreferredSystemLanguages` 的 chunk（6.28899.2 是 `index.chunk-C6TxG41H.js`，6.6395 是 `index.chunk-Da1TsO0P.js`），做两处**等长**字节替换：
 
-```
+```text
 # 启动选语言（旧版 6.6395 的函数名不同，模式一致）
 原文: CHe(e!==void 0&&xHe().includes(e)?e:yHe())
 替换: CHe("zh-Hans"                          )   # 尾部空格补齐等长
@@ -138,32 +189,45 @@ reg add "HKLM\SOFTWARE\Policies\Claude" /v dangerousMaxVersion /t REG_SZ /d 6.28
 reg add "HKLM\SOFTWARE\Policies\Claude" /v disableAutoUpdates /t REG_SZ /d true /f
 ```
 
-`dangerousMaxVersion` = 当前版本号，更新器看到版本已达上限就拒绝升级。**用户级 configLibrary 的 disableAutoUpdates 拦不住 MSIX 包更新**，必须 HKLM。
+`dangerousMaxVersion` = 当前版本号，更新器看到版本已达上限就拒绝升级。**用户级 configLibrary 的 `disableAutoUpdates` 拦不住 MSIX 包更新**，必须写 HKLM。
+
+---
+
+## 对比社区补丁
+
+| 对比项 | 社区补丁 `claude-desktop-zh-cn` | 本项目 |
+|:---|:---|:---|
+| 适用版本 | ≤ 5.x（旧版静态 i18n） | **6.x**（6.28899.2 / 6.6395） |
+| 前端方案 | 改本地 `en-US.json` 词库 | **替换 JS 里 60,058 处 `defaultMessage`** |
+| 服务端下发英文时 | 界面回落英文 | 中文已写死，**不受服务端影响** |
+| 菜单栏 / 对话框 | 未覆盖 | **强制加载官方隐藏词库 + 补齐硬编码菜单** |
+| 实际效果 | 覆盖率数字好看，界面还是英文 | **全中文** |
+| 更新防护 | 无 | HKLM 版本封顶 + 自动更新关闭 |
 
 ---
 
 ## 仓库结构
 
-```
-├── README.md                 本文
-├── en2zh.json                英文原文→中文映射（42,845 条，5MB）
+```text
+├── README.md                       本文
+├── en2zh.json                      英文原文→中文映射（42,845 条，5MB）
 ├── tools/
 │   ├── replace_defaultmessage.py   前端 defaultMessage 批量替换器
 │   ├── patch_app_asar.py           asar 等长字节补丁 + integrity 重建
 │   └── deploy.ps1                  提权部署（ACL + 覆盖 + exe 哈希同步）
 └── docs/
-    └── integrity.md           三层防篡改机制详解 + 排坑速查
+    └── integrity.md                三层防篡改机制详解 + 排坑速查
 ```
 
 ## 关于 en2zh.json
 
-42,845 条映射，三个来源：官方 `en-US.json` 的词条对照、社区补充包、以及机器翻译后的人工精修。品牌名/API/占位符/ICU 格式均已校验。覆盖率约 98%，剩余为刻意保留的品牌词与技术术语。新版新增文案会漏译（回落英文），可按需补充。
+42,845 条映射，三个来源：官方 `en-US.json` 的词条对照、社区补充包、以及机器翻译后的人工精修。品牌名 / API / 占位符 / ICU 格式均已校验。覆盖率约 98%，剩余为刻意保留的品牌词与技术术语。新版新增文案会漏译（回落英文），可按需补充。
 
 ## 已知局限
 
 - 官方漏翻译的硬编码字符串（如调试菜单）靠 `patch_app_asar.py` 打补丁，版本升级后需重新核对
-- 账号如果在设置里手动切语言，壳层可能被推回英文（已被补丁短路，但极端情况需复查）
-- 每次 Anthropic 发版，chunk 文件名和函数名都会变，壳层补丁的定位模式见 `docs/integrity.md`
+- 账号如果在设置里手动切语言，壳层可能被推回英文（已被补丁短路，极端情况需复查）
+- 每次 Anthropic 发版，chunk 文件名和函数名都会变，壳层补丁的定位模式见 [`docs/integrity.md`](docs/integrity.md)
 
 ## 免责声明
 
@@ -171,11 +235,24 @@ reg add "HKLM\SOFTWARE\Policies\Claude" /v disableAutoUpdates /t REG_SZ /d true 
 
 ## Credits
 
-- 方法轮验证受社区补丁 `claude-desktop-zh-cn`（v1.4.26，适配 5.x 旧版） 启发（旧版方案）
+- 方法轮验证受社区补丁 [`claude-desktop-zh-cn`](https://github.com/1346956/claude-desktop-zh-cn) v1.4.26 启发（旧版方案）
 - 翻译映射部分来源于上述社区项目与公开翻译接口
 
 ---
 
-## English Brief
+<details>
+<summary><b>English Brief</b>（点击展开）</summary>
 
 A toolchain + methodology to fully localize Claude Desktop 6.x to Simplified Chinese. The 6.x frontend uses **server-side dynamic i18n** (local dictionaries are ignored; messages are fetched from Anthropic's catalog based on account locale), which broke all legacy dictionary-patching approaches. This project instead patches the code itself: (1) replaces 60k hardcoded `defaultMessage` English strings in the frontend JS, (2) byte-patches the shell to force-load the bundled-but-hidden `zh-Hans.json` catalog. Includes full handling of the three anti-tamper layers (per-file asar integrity, exe-embedded header hashes, MSIX auto-update) via equal-length binary surgery and an HKLM version-cap policy. Tested on 6.28899.2 / 6.6395.
+
+</details>
+
+---
+
+<div align="center">
+
+**MIT License · Copyright © 2026 mistfall**
+
+[⬆ 回到顶部](#claude-desktop-简体中文汉化)
+
+</div>
