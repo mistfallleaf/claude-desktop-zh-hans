@@ -1,0 +1,17 @@
+# 工作产物（解包/打包结果、备份、报告）
+*.asar
+!tools/*.py
+ion-dist-extract/
+app-asar-extract/
+replace-report.json
+
+# Python
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+
+# 系统
+.DS_Store
+Thumbs.db
