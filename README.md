@@ -6,7 +6,8 @@
 
 [![Version](https://img.shields.io/badge/version-6.28899.2-blue)](https://github.com/mistfallleaf/claude-desktop-zh-hans/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows-0078D6?logo=windows&logoColor=white)](https://github.com/mistfallleaf/claude-desktop-zh-hans)
-[![Localized Strings](https://img.shields.io/badge/localized-60%2C058%20strings-brightgreen)](https://github.com/mistfallleaf/claude-desktop-zh-hans)
+[![Localized Strings](https://img.shields.io/badge/localized-60%2C688%20strings-brightgreen)](https://github.com/mistfallleaf/claude-desktop-zh-hans)
+[![Icons](https://img.shields.io/badge/icons-official%20%2B%20taskbar-orange)](https://github.com/mistfallleaf/claude-desktop-zh-hans)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **快速导航：** [为什么需要](#为什么需要这个项目) · [工作原理](#工作原理) · [快速开始](#快速开始) · [对比社区补丁](#对比社区补丁) · [已知局限](#已知局限)
@@ -21,9 +22,10 @@
 |:---|:---|
 | 🎯 **完整覆盖** | 60,688 处界面文案 + 全部菜单 / 对话框 / 托盘，不是"补了半天还是英文" |
 | 🧠 **直击根因** | 6.x 的服务端动态 i18n 让改词库这条路失效，本项目直接改代码本身 |
+| 🖼️ **图标一致** | 附带图标组件，任务栏 / 开始菜单 / 桌面入口与汉化应用保持官方图标一致 |
 | 🛡️ **三层防护全处理** | 等长字节补丁 → 重建 asar integrity → 同步 exe 内哈希标记 |
 | 🔒 **防更新** | HKLM 版本封顶 + 关闭自动更新，升级不会悄悄冲掉汉化 |
-| 📦 **开箱即用** | 43,460 条词库映射 + 三个脚本 + 排坑文档 |
+| 📦 **开箱即用** | 43,460 条词库映射 + 完整脚本 + 排坑文档 |
 
 > **适用版本**：`6.28899.2`（实测）、`6.6395`（改个 chunk 名即可）。
 > 旧版（≤5.x，本地静态 i18n）请用社区补丁 [`claude-desktop-zh-cn`](https://github.com/1346956/claude-desktop-zh-cn) v1.4.26 —— 对旧版来说本项目是杀鸡用牛刀。
@@ -160,6 +162,22 @@ powershell -ExecutionPolicy Bypass -File tools/deploy.ps1 `
 
 脚本自动：杀进程 → takeown 拿 ACL → 覆盖 asar → 同步 exe 内两个哈希标记 → 三处 config 写 `locale: zh-Hans`。
 
+### 安装图标组件
+
+汉化会改写 exe 的完整性标记，Windows 有时不会自动把任务栏 / 开始菜单的图标指向改后的应用。图标组件负责把官方 Claude 图标稳定应用到窗口与任务栏，让入口图标与应用身份保持一致。**普通用户权限即可，无需管理员：**
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\install_icon.ps1
+```
+
+脚本会：把图标组件装到 `%LOCALAPPDATA%\ClaudeIconGuard\` → 注册登录自启（仅当前用户）→ 立即启动守护。
+
+- 守护纯 `ctypes` 实现、零第三方依赖、不发任何网络请求；每 5 秒检查一次，无变化时完全不写入。
+- 它设置窗口级大小图标，以及任务栏重启所需的 AppUserModel 属性（图标 / 命令 / 显示名 / 独立 ID）。
+- 卸载：删除 HKCU `...\Run` 下的 `ClaudeIconGuard` 项，再删 `%LOCALAPPDATA%\ClaudeIconGuard\` 目录即可。
+
+> 该组件只作用于窗口图标与任务栏身份，不修改 exe / asar / 任何配置，也不影响聊天与汉化内容。
+
 ### 防更新（必做，否则白干）
 
 ```bat
@@ -179,6 +197,7 @@ reg add "HKLM\SOFTWARE\Policies\Claude" /v disableAutoUpdates /t REG_SZ /d true 
 | 前端方案 | 改本地 `en-US.json` 词库 | **替换 JS 里 60,688 处 `defaultMessage`** |
 | 服务端下发英文时 | 界面回落英文 | 中文已写死，**不受服务端影响** |
 | 菜单栏 / 对话框 | 未覆盖 | **强制加载官方隐藏词库 + 补齐硬编码菜单** |
+| 图标 / 任务栏 | 未处理 | **图标组件保证入口与应用的官方图标一致** |
 | 实际效果 | 覆盖率数字好看，界面还是英文 | **全中文** |
 | 更新防护 | 无 | HKLM 版本封顶 + 自动更新关闭 |
 
@@ -189,6 +208,8 @@ reg add "HKLM\SOFTWARE\Policies\Claude" /v disableAutoUpdates /t REG_SZ /d true 
 ```text
 ├── README.md                       本文
 ├── en2zh.json                      英文原文→中文映射（43,460 条，5MB）
+├── assets/
+│   └── claude.ico                  官方 Claude 图标（图标组件用）
 ├── docs/
 │   ├── architecture.png            架构图（高清渲染）
 │   ├── integrity.md                三层防篡改机制详解 + 排坑速查
@@ -196,7 +217,9 @@ reg add "HKLM\SOFTWARE\Policies\Claude" /v disableAutoUpdates /t REG_SZ /d true 
 ├── tools/
 │   ├── replace_defaultmessage.py   前端 defaultMessage 批量替换器
 │   ├── patch_app_asar.py           asar 等长字节补丁 + integrity 重建
-│   └── deploy.ps1                  提权部署（ACL + 覆盖 + exe 哈希同步）
+│   ├── deploy.ps1                  提权部署（ACL + 覆盖 + exe 哈希同步）
+│   ├── icon_guard.pyw              图标组件守护（窗口/任务栏官方图标）
+│   └── install_icon.ps1            图标组件一键安装（用户目录 + 自启）
 ```
 
 ## 关于 en2zh.json
@@ -223,7 +246,7 @@ reg add "HKLM\SOFTWARE\Policies\Claude" /v disableAutoUpdates /t REG_SZ /d true 
 <details>
 <summary><b>English Brief</b>（点击展开）</summary>
 
-A toolchain + methodology to fully localize Claude Desktop 6.x to Simplified Chinese. The 6.x frontend uses **server-side dynamic i18n** (local dictionaries are ignored; messages are fetched from Anthropic's catalog based on account locale), which broke all legacy dictionary-patching approaches. This project instead patches the code itself: (1) replaces 60k hardcoded `defaultMessage` English strings in the frontend JS, (2) byte-patches the shell to force-load the bundled-but-hidden `zh-Hans.json` catalog. Includes full handling of the three anti-tamper layers (per-file asar integrity, exe-embedded header hashes, MSIX auto-update) via equal-length binary surgery and an HKLM version-cap policy. Tested on 6.28899.2 / 6.6395.
+A toolchain + methodology to fully localize Claude Desktop 6.x to Simplified Chinese. The 6.x frontend uses **server-side dynamic i18n** (local dictionaries are ignored; messages are fetched from Anthropic's catalog based on account locale), which broke all legacy dictionary-patching approaches. This project instead patches the code itself: (1) replaces 60k hardcoded `defaultMessage` English strings in the frontend JS, (2) byte-patches the shell to force-load the bundled-but-hidden `zh-Hans.json` catalog. Includes full handling of the three anti-tamper layers (per-file asar integrity, exe-embedded header hashes, MSIX auto-update) via equal-length binary surgery and an HKLM version-cap policy, plus a lightweight icon component that keeps the official Claude icon consistent across taskbar, Start menu and desktop. Tested on 6.28899.2 / 6.6395.
 
 </details>
 
