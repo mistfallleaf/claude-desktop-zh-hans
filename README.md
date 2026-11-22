@@ -19,11 +19,11 @@
 
 | | |
 |:---|:---|
-| 🎯 **完整覆盖** | 60,058 处界面文案 + 全部菜单 / 对话框 / 托盘，不是"补了半天还是英文" |
+| 🎯 **完整覆盖** | 60,688 处界面文案 + 全部菜单 / 对话框 / 托盘，不是"补了半天还是英文" |
 | 🧠 **直击根因** | 6.x 的服务端动态 i18n 让改词库这条路失效，本项目直接改代码本身 |
 | 🛡️ **三层防护全处理** | 等长字节补丁 → 重建 asar integrity → 同步 exe 内哈希标记 |
 | 🔒 **防更新** | HKLM 版本封顶 + 关闭自动更新，升级不会悄悄冲掉汉化 |
-| 📦 **开箱即用** | 42,845 条词库映射 + 三个脚本 + 排坑文档 |
+| 📦 **开箱即用** | 43,460 条词库映射 + 三个脚本 + 排坑文档 |
 
 > **适用版本**：`6.28899.2`（实测）、`6.6395`（改个 chunk 名即可）。
 > 旧版（≤5.x，本地静态 i18n）请用社区补丁 [`claude-desktop-zh-cn`](https://github.com/1346956/claude-desktop-zh-cn) v1.4.26 —— 对旧版来说本项目是杀鸡用牛刀。
@@ -86,7 +86,7 @@ cp "$APP/resources/ion-dist.asar" ion-dist.asar.orig
 npx @electron/asar extract "$APP/resources/ion-dist.asar" ion-dist-extract
 npx @electron/asar extract "$APP/resources/app.asar" app-asar-extract
 
-# 3. 前端替换（60,058 处，几分钟）
+# 3. 前端替换（60,688 处，几分钟）
 python tools/replace_defaultmessage.py ion-dist-extract/assets
 
 # 4. 语法校验（必做！改坏 JS 会白屏）
@@ -176,7 +176,7 @@ reg add "HKLM\SOFTWARE\Policies\Claude" /v disableAutoUpdates /t REG_SZ /d true 
 | 对比项 | 社区补丁 `claude-desktop-zh-cn` | 本项目 |
 |:---|:---|:---|
 | 适用版本 | ≤ 5.x（旧版静态 i18n） | **6.x**（6.28899.2 / 6.6395） |
-| 前端方案 | 改本地 `en-US.json` 词库 | **替换 JS 里 60,058 处 `defaultMessage`** |
+| 前端方案 | 改本地 `en-US.json` 词库 | **替换 JS 里 60,688 处 `defaultMessage`** |
 | 服务端下发英文时 | 界面回落英文 | 中文已写死，**不受服务端影响** |
 | 菜单栏 / 对话框 | 未覆盖 | **强制加载官方隐藏词库 + 补齐硬编码菜单** |
 | 实际效果 | 覆盖率数字好看，界面还是英文 | **全中文** |
@@ -188,7 +188,7 @@ reg add "HKLM\SOFTWARE\Policies\Claude" /v disableAutoUpdates /t REG_SZ /d true 
 
 ```text
 ├── README.md                       本文
-├── en2zh.json                      英文原文→中文映射（42,845 条，5MB）
+├── en2zh.json                      英文原文→中文映射（43,460 条，5MB）
 ├── docs/
 │   ├── architecture.png            架构图（高清渲染）
 │   ├── integrity.md                三层防篡改机制详解 + 排坑速查
@@ -201,7 +201,7 @@ reg add "HKLM\SOFTWARE\Policies\Claude" /v disableAutoUpdates /t REG_SZ /d true 
 
 ## 关于 en2zh.json
 
-42,845 条映射，三个来源：官方 `en-US.json` 的词条对照、社区补充包、以及机器翻译后的人工精修。品牌名 / API / 占位符 / ICU 格式均已校验。覆盖率约 98%，剩余为刻意保留的品牌词与技术术语。新版新增文案会漏译（回落英文），可按需补充。
+43,460 条映射，三个来源：官方 `en-US.json` 的词条对照、社区补充包、以及机器翻译后的人工精修。品牌名 / API / 占位符 / ICU 格式均已校验。在 6.28899.2 上实测 62,263 条 `defaultMessage` 漏译为 0；后续版本新增文案仍可能回落英文，可按同一流程补充。
 
 ## 已知局限
 
